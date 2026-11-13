@@ -230,7 +230,7 @@
             }
         };
 
-        // Envio do Chamado (Supabase + EmailJS usando o método SDK oficial emailjs.send)
+        // Envio do Chamado (Supabase + SDK Oficial emailjs.send sem erro de CORS)
         document.getElementById('helpdeskForm').addEventListener('submit', async function(event) {
             event.preventDefault();
 
@@ -287,7 +287,7 @@
 
                 if (dbError) throw dbError;
 
-                // 2. Dispara o e-mail via SDK oficial do EmailJS (emailjs.send)
+                // 2. Dispara e-mail via SDK oficial (emailjs.send) sem bloqueio de CORS
                 try {
                     const corpoMensagem = 
 `Olá, ${nomeVal}! 
@@ -385,7 +385,7 @@ Nossa equipe técnica já foi notificada e em breve entrará em contato.`;
                 console.error('Erro ao carregar:', err);
                 tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-400">Erro ao carregar do banco de dados.</td></tr>`;
             }
-        }
+        };
 
         // Abrir Detalhes no Modal
         window.abrirDetalhes = async function(id) {
