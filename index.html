@@ -8,13 +8,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SDK do Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- SDK do EmailJS -->
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-    <script type="text/javascript">
-        (function() {
-            emailjs.init("ibjb2ac6pwHwl03-t");
-        })();
-    </script>
 </head>
 <body class="bg-slate-900 min-h-screen py-10 px-4 text-slate-100">
 
@@ -191,6 +184,8 @@
         const SUPABASE_ANON_KEY = 'sb_publishable_E2ZVIUguxOImOVo8BZ2-JA_g66ALCIN';
         const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+        const RESEND_API_KEY = 're_8pwtRUeD_3y3z6UqXjL9hV1p5KxW8b7N'; 
+
         let chamadoAtualId = null;
         let chamadoAtualEmail = null;
         let chamadoAtualNome = null;
@@ -230,7 +225,6 @@
             }
         };
 
-        // Envio do Chamado (Supabase + SDK Oficial emailjs.send sem erro de CORS)
         document.getElementById('helpdeskForm').addEventListener('submit', async function(event) {
             event.preventDefault();
 
@@ -269,7 +263,6 @@
                 const assuntoVal = document.getElementById('Assunto').value;
                 const descVal = document.getElementById('Descrição').value;
 
-                // 1. Salva no Supabase
                 const dadosChamado = {
                     Nome: nomeVal,
                     Email: emailVal,
@@ -287,34 +280,38 @@
 
                 if (dbError) throw dbError;
 
-                // 2. Dispara e-mail via SDK oficial (emailjs.send) sem bloqueio de CORS
                 try {
-                    const corpoMensagem = 
-`Olá, ${nomeVal}! 
+                    const htmlConteudo = `
+                        <h2>Olá, ${nomeVal}!</h2>
+                        <p>Seu chamado foi registrado com sucesso na Central de Suporte ACG.</p>
+                        <ul>
+                            <li><b>Departamento:</b> ${deptVal}</li>
+                            <li><b>Assunto:</b> ${assuntoVal}</li>
+                            <li><b>Descrição:</b> ${descVal}</li>
+                            <li><b>Telefone:</b> ${telVal || 'Não informado'}</li>
+                            <li><b>Anexo:</b> ${anexoUrl ? `<a href="${anexoUrl}" target="_blank">Ver Arquivo</a>` : 'Nenhum anexo'}</li>
+                        </ul>
+                        <p>Nossa equipe técnica já foi notificada e em breve entrará em contato.</p>
+                    `;
 
-Seu chamado foi registrado com sucesso na Central de Suporte ACG.
-
-Detalhes da Solicitação:
-- Departamento: ${deptVal}
-- Assunto: ${assuntoVal}
-- Descrição: ${descVal}
-- Telefone: ${telVal || 'Não informado'}
-- Link do Anexo: ${anexoUrl || 'Nenhum anexo enviado'}
-
-Nossa equipe técnica já foi notificada e em breve entrará em contato.`;
-
-                    const templateParams = {
-                        name: nomeVal,
-                        email: emailVal,
-                        message: corpoMensagem
-                    };
-
-                    await emailjs.send('service_oc0naar', 'template_52j99er', templateParams);
+                    await fetch('https://api.resend.com/emails', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${RESEND_API_KEY}`
+                        },
+                        body: JSON.stringify({
+                            from: 'ACG Help Desk <onboarding@resend.dev>',
+                            to: [emailVal],
+                            subject: `[Help Desk] Novo Chamado: ${assuntoVal}`,
+                            html: htmlConteudo
+                        })
+                    });
                 } catch (emailErr) {
-                    console.warn('Aviso no disparo do e-mail:', emailErr);
+                    console.warn('Aviso no envio do e-mail via Resend:', emailErr);
                 }
 
-                statusDiv.textContent = 'Chamado enviado com sucesso! E-mail de confirmação disparado.';
+                statusDiv.textContent = 'Chamado enviado com sucesso e e-mail disparado!';
                 statusDiv.className = 'mt-4 text-center text-sm text-emerald-400 font-medium';
                 statusDiv.classList.remove('hidden');
                 
@@ -330,7 +327,6 @@ Nossa equipe técnica já foi notificada e em breve entrará em contato.`;
             }
         });
 
-        // Carregar Chamados na Área Admin
         async function carregarChamados() {
             const tbody = document.getElementById('tabelaChamados');
             tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-500">Buscando chamados...</td></tr>`;
@@ -359,7 +355,7 @@ Nossa equipe técnica já foi notificada e em breve entrará em contato.`;
                     tr.innerHTML = `
                         <td class="p-3 text-xs font-mono">
                             <a href="#" onclick="abrirDetalhes('${ticket.id}')" class="text-blue-400 font-semibold hover:underline">
-                                #${ticket.id.substring(0, 8)}...
+                                #${ticket.id.toString().substring(0, 8)}...
                             </a>
                         </td>
                         <td class="p-3">
@@ -385,9 +381,8 @@ Nossa equipe técnica já foi notificada e em breve entrará em contato.`;
                 console.error('Erro ao carregar:', err);
                 tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-400">Erro ao carregar do banco de dados.</td></tr>`;
             }
-        };
+        }
 
-        // Abrir Detalhes no Modal
         window.abrirDetalhes = async function(id) {
             const { data: tickets, error } = await supabaseClient
                 .from('tickets')
@@ -410,7 +405,7 @@ Nossa equipe técnica já foi notificada e em breve entrará em contato.`;
 
             document.getElementById('conteudoDetalhes').innerHTML = `
                 <p><strong>Solicitante:</strong> ${tickets.Nome} (${tickets.Email})</p>
-                <p><strong>Telefone:</strong> ${tickets.Telefone || 'Não informado'}</p>
+                <p><strong>Telefone:</strong> ${tickets.Telefone || 'Non informado'}</p>
                 <p><strong>Departamento:</strong> <span class="text-rose-400 font-semibold">${tickets.departamento || 'Não informado'}</span></p>
                 <p><strong>Assunto:</strong> ${tickets.Assunto}</p>
                 <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 mt-2">
@@ -428,7 +423,6 @@ Nossa equipe técnica já foi notificada e em breve entrará em contato.`;
             document.getElementById('modalDetalhes').classList.add('hidden');
         };
 
-        // Salvar Resposta, Status, Técnico e Disparar E-mail para o Cliente via SDK do EmailJS
         document.getElementById('btnSalvarStatus').addEventListener('click', async function() {
             if (!chamadoAtualId) return;
 
@@ -451,29 +445,35 @@ Nossa equipe técnica já foi notificada e em breve entrará em contato.`;
             }
 
             try {
-                const mensagemCliente = 
-`Olá, ${chamadoAtualNome || 'Cliente'}! 
+                const htmlResposta = `
+                    <h2>Atualização no seu Chamado - ACG Help Desk</h2>
+                    <p>Olá, ${chamadoAtualNome || 'Cliente'}!</p>
+                    <p>Seu chamado foi atualizado pela equipe:</p>
+                    <ul>
+                        <li><b>Status Atual:</b> ${novoStatus}</li>
+                        <li><b>Técnico Responsável:</b> ${novoTecnico || 'Não atribuído'}</li>
+                        <li><b>Notas da Equipe:</b> ${novaResposta || 'Nenhuma nota adicional'}</li>
+                    </ul>
+                `;
 
-Houve uma atualização no seu chamado do ACG Help Desk.
-
-Status Atual: ${novoStatus}
-Técnico Responsável: ${novoTecnico || 'Não atribuído'}
-
-Notas / Resposta da Equipe:
-${novaResposta || 'Nenhuma nota adicional no momento.'}`;
-
-                const templateParams = {
-                    name: chamadoAtualNome || 'Cliente',
-                    email: chamadoAtualEmail,
-                    message: mensagemCliente
-                };
-
-                await emailjs.send('service_oc0naar', 'template_52j99er', templateParams);
+                await fetch('https://api.resend.com/emails', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${RESEND_API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        from: 'ACG Help Desk <onboarding@resend.dev>',
+                        to: [chamadoAtualEmail],
+                        subject: `[Help Desk] Chamado Atualizado (${novoStatus})`,
+                        html: htmlResposta
+                    })
+                });
             } catch (emailErr) {
-                console.warn('Aviso ao enviar e-mail para o cliente:', emailErr);
+                console.warn('Aviso ao enviar e-mail de atualização:', emailErr);
             }
 
-            alert('Chamado atualizado e cliente notificado por e-mail!');
+            alert('Chamado atualizado e cliente notificado via Resend!');
             fecharModal();
             carregarChamados();
         });
