@@ -50,7 +50,7 @@
             </div>
 
             <form id="helpdeskForm" class="space-y-4">
-                <!-- CHAVE DO WEB3FORMS JÁ INSERIDA -->
+                <!-- CHAVE DO WEB3FORMS -->
                 <input type="hidden" name="access_key" value="d2a5ee9e-2c55-42f9-980a-e1e13c7b5ad6">
                 <input type="hidden" name="subject" value="Novo Chamado Registrado - ACG Help Desk">
 
@@ -272,7 +272,7 @@
 
                 if (dbError) throw dbError;
 
-                // 2. Envia via Web3Forms
+                // 2. Envia via Web3Forms para notificar a equipe
                 const formData = new FormData(this);
                 if (anexoUrl) {
                     formData.append('link_anexo', anexoUrl);
@@ -288,7 +288,7 @@
                     console.warn('Aviso no envio do e-mail:', result);
                 }
 
-                statusDiv.textContent = 'Chamado enviado com sucesso e equipe notificada!';
+                statusDiv.textContent = 'Chamado enviado com sucesso! Sua solicitação foi registrada.';
                 statusDiv.className = 'mt-4 text-center text-sm text-emerald-400 font-medium';
                 statusDiv.classList.remove('hidden');
                 
