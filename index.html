@@ -50,10 +50,8 @@
             </div>
 
             <form id="helpdeskForm" class="space-y-4">
-                <!-- CHAVE DO WEB3FORMS (COLE SUA CHAVE NO VALUE ABAIXO) -->
-                <input type="hidden" name="apikey" value="d2a5ee9e-2c55-42f9-980a-e1e13c7b5ad6">
-                
-                <!-- CONFIGURAÇÃO EXTRA PARA O E-MAIL DO CLIENTE RECEBER CÓPIA SE QUISER -->
+                <!-- CHAVE DO WEB3FORMS JÁ INSERIDA -->
+                <input type="hidden" name="access_key" value="d2a5ee9e-2c55-42f9-980a-e1e13c7b5ad6">
                 <input type="hidden" name="subject" value="Novo Chamado Registrado - ACG Help Desk">
 
                 <div>
@@ -224,7 +222,7 @@
             }
         };
 
-        // Envio do Chamado (Supabase + Web3Forms nativo sem CORS)
+        // Envio do Chamado (Supabase + Web3Forms)
         document.getElementById('helpdeskForm').addEventListener('submit', async function(event) {
             event.preventDefault();
 
@@ -274,7 +272,7 @@
 
                 if (dbError) throw dbError;
 
-                // 2. Envia o e-mail via Web3Forms (Faz um POST limpo que não sofre de CORS)
+                // 2. Envia via Web3Forms
                 const formData = new FormData(this);
                 if (anexoUrl) {
                     formData.append('link_anexo', anexoUrl);
@@ -290,7 +288,7 @@
                     console.warn('Aviso no envio do e-mail:', result);
                 }
 
-                statusDiv.textContent = 'Chamado enviado com sucesso e e-mail disparado!';
+                statusDiv.textContent = 'Chamado enviado com sucesso e equipe notificada!';
                 statusDiv.className = 'mt-4 text-center text-sm text-emerald-400 font-medium';
                 statusDiv.classList.remove('hidden');
                 
