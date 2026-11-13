@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Central de Suporte - ACG Help Desk</title>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SDK do Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- SDK do EmailJS -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script type="text/javascript">
+        (function() {
+            emailjs.init("ibjb2ac6pwHwl03-t");
+        })();
+    </script>
+</head>
+<body class="bg-slate-900 min-h-screen py-10 px-4 text-slate-100">
+
+    <div class="max-w-4xl mx-auto space-y-6">
+        
+        <!-- CABEÇALHO / LOGO E MENU DE ABAS -->
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl shadow-xl p-5 flex flex-col md:flex-row justify-between items-center gap-4">
+            
+            <!-- LOGO ACG HELP DESK ESTILIZADA -->
+            <div class="flex items-center gap-3.5">
+                <div class="bg-gradient-to-tr from-rose-600 to-pink-500 p-2.5 rounded-xl shadow-lg shadow-rose-600/30 flex items-center justify-center">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="font-extrabold text-lg text-white tracking-wider bg-rose-600 text-white px-2 py-0.5 rounded-md text-xs shadow">ACG</span>
+                        <span class="font-bold text-lg text-white tracking-wide">Help Desk</span>
+                    </div>
+                    <p class="text-xs text-slate-400">Suporte Técnico Integrado</p>
+                </div>
+            </div>
+
+            <!-- BOTÕES DE NAVEGAÇÃO -->
+            <div class="flex items-center gap-2">
+                <button onclick="mudarAba('cliente')" id="btnAbaCliente" class="px-4 py-2 rounded-xl text-sm font-medium bg-blue-600 text-white shadow-lg shadow-blue-600/30 transition">
+                    Abrir Chamado
+                </button>
+                <button onclick="tentarEntrarAdmin()" id="btnAbaAdmin" class="px-4 py-2 rounded-xl text-sm font-medium bg-slate-700 text-slate-300 hover:bg-slate-600 transition">
+                    🔒 Área da Equipe
+                </button>
+            </div>
+        </div>
+
+        <!-- ABA 1: FORMULÁRIO DO CLIENTE -->
+        <div id="abaCliente" class="bg-slate-800 border border-slate-700 rounded-2xl shadow-xl p-8">
+            <div class="text-center mb-6">
+                <h2 class="text-2xl font-bold text-white">Central de Suporte</h2>
+                <p class="text-slate-400 text-sm mt-1">Preencha os campos abaixo para registrar sua solicitação para a equipe.</p>
+            </div>
+
+            <form id="helpdeskForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-300">Seu Nome</label>
+                    <input type="text" id="Nome" required class="mt-1 w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300">Seu E-mail</label>
+                        <input type="email" id="Email" required class="mt-1 w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300">Telefone / WhatsApp</label>
+                        <input type="text" id="Telefone" class="mt-1 w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="(00) 00000-0000">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-300">Departamento / Setor</label>
+                    <input type="text" id="Departamento" required class="mt-1 w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Ex: Financeiro, TI, Produção, RH...">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-300">Assunto</label>
+                    <input type="text" id="Assunto" required class="mt-1 w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Ex: Problema no acesso ao sistema">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-300">Descrição do Problema</label>
+                    <textarea id="Descrição" rows="4" required class="mt-1 w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Descreva detalhadamente o que aconteceu..."></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-300">Anexo (Opcional)</label>
+                    <input type="file" id="arquivoAnexo" class="mt-1 w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-600/20 file:text-blue-400 hover:file:bg-blue-600/30">
+                </div>
+
+                <button type="submit" id="btnEnviar" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-3 rounded-xl shadow-lg shadow-blue-600/30 transition duration-200 cursor-pointer">
+                    Enviar Chamado
+                </button>
+            </form>
+
+            <div id="statusMensagem" class="mt-4 text-center text-sm hidden font-medium"></div>
+        </div>
+
+        <!-- ABA 2: PAINEL ADMINISTRATIVO (PROTEGIDO) -->
+        <div id="abaAdmin" class="bg-slate-800 border border-slate-700 rounded-2xl shadow-xl p-8 hidden space-y-6">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-4">
+                <div>
+                    <h2 class="text-xl font-bold text-white">Painel de Gestão da Equipe</h2>
+                    <p class="text-slate-400 text-sm">Gerencie, responda e feche os chamados recebidos.</p>
+                </div>
+                <button onclick="carregarChamados()" class="bg-slate-700 text-white px-4 py-2 rounded-xl hover:bg-slate-600 font-medium text-sm transition duration-200">
+                    🔄 Atualizar Lista
+                </button>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-900/50 border-b border-slate-700 text-slate-400 text-xs uppercase tracking-wider">
+                            <th class="p-3">ID</th>
+                            <th class="p-3">Solicitante</th>
+                            <th class="p-3">Departamento / Assunto</th>
+                            <th class="p-3">Técnico Resp.</th>
+                            <th class="p-3">Status</th>
+                            <th class="p-3">Anexo</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelaChamados" class="text-sm text-slate-300 divide-y divide-slate-700/50">
+                        <tr>
+                            <td colspan="6" class="p-4 text-center text-slate-500">Carregando chamados...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- MODAL DE DETALHES E RESPOSTA (ADMIN) -->
+    <div id="modalDetalhes" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                <h3 class="text-lg font-bold text-white">Detalhes e Interação do Chamado</h3>
+                <button onclick="fecharModal()" class="text-slate-400 hover:text-white font-bold text-xl">&times;</button>
+            </div>
+
+            <div id="conteudoDetalhes" class="space-y-3 text-sm text-slate-300">
+                <!-- Preenchido via JS -->
+            </div>
+
+            <div class="border-t border-slate-700 pt-4 space-y-3">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300">Alterar Status</label>
+                        <select id="selectStatus" class="w-full mt-1 px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white">
+                            <option value="Aberto">Aberto</option>
+                            <option value="Em Andamento">Em Andamento</option>
+                            <option value="Fechado">Fechado</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-300">Técnico Responsável</label>
+                        <select id="selectTecnico" class="w-full mt-1 px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white">
+                            <option value="">Nenhum</option>
+                            <option value="Kane">Kane</option>
+                            <option value="Eduardo">Eduardo</option>
+                            <option value="Samuel">Samuel</option>
+                            <option value="Lalit">Lalit</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-300">Responder / Notas da Equipe</label>
+                    <textarea id="respostaChamado" rows="3" class="w-full mt-1 px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white" placeholder="Digite sua resposta ou anotação para este chamado..."></textarea>
+                </div>
+
+                <button id="btnSalvarStatus" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2.5 rounded-xl transition duration-200 text-sm cursor-pointer shadow-lg shadow-emerald-600/20">
+                    Salvar Resposta e Notificar Cliente
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LÓGICA JAVASCRIPT -->
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+
+        const SUPABASE_URL = 'https://vnlyxlqlekglgmrfgjcf.supabase.co'; 
+        const SUPABASE_ANON_KEY = 'sb_publishable_E2ZVIUguxOImOVo8BZ2-JA_g66ALCIN';
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let chamadoAtualId = null;
+        let chamadoAtualEmail = null;
+        let chamadoAtualNome = null;
+        let senhaAdminAutenticada = false;
+
+        window.tentarEntrarAdmin = function() {
+            if (senhaAdminAutenticada) {
+                mudarAba('admin');
+                return;
+            }
+            const senhaDigitada = prompt("Digite a senha de acesso da equipe:");
+            if (senhaDigitada === "Pousoalegre@2026") {
+                senhaAdminAutenticada = true;
+                mudarAba('admin');
+            } else if (senhaDigitada !== null) {
+                alert("Senha incorreta!");
+            }
+        };
+
+        window.mudarAba = function(aba) {
+            const abaCliente = document.getElementById('abaCliente');
+            const abaAdmin = document.getElementById('abaAdmin');
+            const btnCliente = document.getElementById('btnAbaCliente');
+            const btnAdmin = document.getElementById('btnAbaAdmin');
+
+            if (aba === 'cliente') {
+                abaCliente.classList.remove('hidden');
+                abaAdmin.classList.add('hidden');
+                btnCliente.className = "px-4 py-2 rounded-xl text-sm font-medium bg-blue-600 text-white shadow-lg shadow-blue-600/30 transition";
+                btnAdmin.className = "px-4 py-2 rounded-xl text-sm font-medium bg-slate-700 text-slate-300 hover:bg-slate-600 transition";
+            } else {
+                abaAdmin.classList.remove('hidden');
+                abaCliente.classList.add('hidden');
+                btnAdmin.className = "px-4 py-2 rounded-xl text-sm font-medium bg-blue-600 text-white shadow-lg shadow-blue-600/30 transition";
+                btnCliente.className = "px-4 py-2 rounded-xl text-sm font-medium bg-slate-700 text-slate-300 hover:bg-slate-600 transition";
+                carregarChamados();
+            }
+        };
+
+        // Envio do Chamado (Supabase + EmailJS usando o método SDK oficial emailjs.send)
+        document.getElementById('helpdeskForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const btn = document.getElementById('btnEnviar');
+            const statusDiv = document.getElementById('statusMensagem');
+            
+            btn.disabled = true;
+            btn.textContent = 'Enviando chamado...';
+            statusDiv.classList.add('hidden');
+
+            const arquivoInput = document.getElementById('arquivoAnexo');
+            let anexoUrl = null;
+
+            try {
+                if (arquivoInput.files.length > 0) {
+                    const arquivo = arquivoInput.files[0];
+                    const nomeLimpo = arquivo.name.replace(/[^a-zA-Z0-9_.-]/g, '_');
+                    const nomeArquivo = `${Date.now()}_${nomeLimpo}`;
+                    
+                    const { error: uploadError } = await supabaseClient.storage
+                        .from('anexos')
+                        .upload(nomeArquivo, arquivo);
+
+                    if (!uploadError) {
+                        const { data: publicUrlData } = supabaseClient.storage
+                            .from('anexos')
+                            .getPublicUrl(nomeArquivo);
+                        anexoUrl = publicUrlData.publicUrl;
+                    }
+                }
+
+                const nomeVal = document.getElementById('Nome').value;
+                const emailVal = document.getElementById('Email').value;
+                const telVal = document.getElementById('Telefone').value;
+                const deptVal = document.getElementById('Departamento').value;
+                const assuntoVal = document.getElementById('Assunto').value;
+                const descVal = document.getElementById('Descrição').value;
+
+                // 1. Salva no Supabase
+                const dadosChamado = {
+                    Nome: nomeVal,
+                    Email: emailVal,
+                    Telefone: telVal,
+                    departamento: deptVal,
+                    Assunto: assuntoVal,
+                    Descrição: descVal,
+                    Status: 'Aberto',
+                    anexo: anexoUrl
+                };
+
+                const { error: dbError } = await supabaseClient
+                    .from('tickets')
+                    .insert([dadosChamado]);
+
+                if (dbError) throw dbError;
+
+                // 2. Dispara o e-mail via SDK oficial do EmailJS (emailjs.send)
+                try {
+                    const corpoMensagem = 
+`Olá, ${nomeVal}! 
+
+Seu chamado foi registrado com sucesso na Central de Suporte ACG.
+
+Detalhes da Solicitação:
+- Departamento: ${deptVal}
+- Assunto: ${assuntoVal}
+- Descrição: ${descVal}
+- Telefone: ${telVal || 'Não informado'}
+- Link do Anexo: ${anexoUrl || 'Nenhum anexo enviado'}
+
+Nossa equipe técnica já foi notificada e em breve entrará em contato.`;
+
+                    const templateParams = {
+                        name: nomeVal,
+                        email: emailVal,
+                        message: corpoMensagem
+                    };
+
+                    await emailjs.send('service_oc0naar', 'template_52j99er', templateParams);
+                } catch (emailErr) {
+                    console.warn('Aviso no disparo do e-mail:', emailErr);
+                }
+
+                statusDiv.textContent = 'Chamado enviado com sucesso! E-mail de confirmação disparado.';
+                statusDiv.className = 'mt-4 text-center text-sm text-emerald-400 font-medium';
+                statusDiv.classList.remove('hidden');
+                
+                document.getElementById('helpdeskForm').reset();
+            } catch (err) {
+                console.error('Erro geral:', err);
+                statusDiv.textContent = 'Ocorreu um erro ao salvar o chamado. Verifique os campos.';
+                statusDiv.className = 'mt-4 text-center text-sm text-red-400 font-medium';
+                statusDiv.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Enviar Chamado';
+            }
+        });
+
+        // Carregar Chamados na Área Admin
+        async function carregarChamados() {
+            const tbody = document.getElementById('tabelaChamados');
+            tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-500">Buscando chamados...</td></tr>`;
+
+            try {
+                const { data: tickets, error } = await supabaseClient
+                    .from('tickets')
+                    .select('*')
+                    .order('id', { ascending: false });
+
+                if (error) throw error;
+
+                if (!tickets || tickets.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-500">Nenhum chamado encontrado ainda.</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = '';
+                
+                tickets.forEach(ticket => {
+                    const statusCor = ticket.Status === 'Fechado' ? 'bg-slate-700 text-slate-300' : ticket.Status === 'Em Andamento' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-blue-500/20 text-blue-400 border border-blue-500/30';
+                    const tecnicoNome = ticket.tecnico ? `<span class="bg-purple-500/20 text-purple-300 px-2.5 py-1 rounded-full text-xs font-semibold border border-purple-500/30">${ticket.tecnico}</span>` : '<span class="text-slate-500 text-xs">Não atribuído</span>';
+
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-slate-700/30 transition duration-150';
+                    tr.innerHTML = `
+                        <td class="p-3 text-xs font-mono">
+                            <a href="#" onclick="abrirDetalhes('${ticket.id}')" class="text-blue-400 font-semibold hover:underline">
+                                #${ticket.id.substring(0, 8)}...
+                            </a>
+                        </td>
+                        <td class="p-3">
+                            <div class="font-medium text-white">${ticket.Nome || ''}</div>
+                            <div class="text-xs text-slate-400">${ticket.Email || ''}</div>
+                        </td>
+                        <td class="p-3">
+                            <div class="text-xs text-rose-400 font-semibold">${ticket.departamento || 'Não informado'}</div>
+                            <div class="font-medium text-slate-200">${ticket.Assunto || ''}</div>
+                        </td>
+                        <td class="p-3">${tecnicoNome}</td>
+                        <td class="p-3">
+                            <span class="px-2.5 py-1 rounded-full text-xs font-semibold ${statusCor}">${ticket.Status || 'Aberto'}</span>
+                        </td>
+                        <td class="p-3 whitespace-nowrap text-xs">
+                            ${ticket.anexo ? `<a href="${ticket.anexo}" target="_blank" class="text-blue-400 underline font-medium">Ver Arquivo</a>` : '<span class="text-slate-500">Sem anexo</span>'}
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+            } catch (err) {
+                console.error('Erro ao carregar:', err);
+                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-400">Erro ao carregar do banco de dados.</td></tr>`;
+            }
+        }
+
+        // Abrir Detalhes no Modal
+        window.abrirDetalhes = async function(id) {
+            const { data: tickets, error } = await supabaseClient
+                .from('tickets')
+                .select('*')
+                .eq('id', id)
+                .single();
+
+            if (error || !tickets) {
+                alert('Erro ao carregar os detalhes do chamado.');
+                return;
+            }
+
+            chamadoAtualId = tickets.id;
+            chamadoAtualEmail = tickets.Email;
+            chamadoAtualNome = tickets.Nome;
+
+            document.getElementById('selectStatus').value = tickets.Status || 'Aberto';
+            document.getElementById('selectTecnico').value = tickets.tecnico || '';
+            document.getElementById('respostaChamado').value = tickets.resposta || '';
+
+            document.getElementById('conteudoDetalhes').innerHTML = `
+                <p><strong>Solicitante:</strong> ${tickets.Nome} (${tickets.Email})</p>
+                <p><strong>Telefone:</strong> ${tickets.Telefone || 'Não informado'}</p>
+                <p><strong>Departamento:</strong> <span class="text-rose-400 font-semibold">${tickets.departamento || 'Não informado'}</span></p>
+                <p><strong>Assunto:</strong> ${tickets.Assunto}</p>
+                <div class="bg-slate-900 p-3 rounded-xl border border-slate-700 mt-2">
+                    <strong class="block text-slate-300 mb-1">Descrição do Problema:</strong>
+                    <p class="whitespace-pre-wrap text-slate-200">${tickets.Descrição}</p>
+                </div>
+                ${tickets.resposta ? `<div class="bg-emerald-950/40 p-3 rounded-xl border border-emerald-800/50 mt-2"><strong class="block text-emerald-400 mb-1">Resposta Anterior:</strong><p class="whitespace-pre-wrap text-emerald-200">${tickets.resposta}</p></div>` : ''}
+                ${tickets.anexo ? `<p class="mt-2"><a href="${tickets.anexo}" target="_blank" class="text-blue-400 underline font-medium">🔗 Abrir Anexo Enviado</a></p>` : ''}
+            `;
+
+            document.getElementById('modalDetalhes').classList.remove('hidden');
+        };
+
+        window.fecharModal = function() {
+            document.getElementById('modalDetalhes').classList.add('hidden');
+        };
+
+        // Salvar Resposta, Status, Técnico e Disparar E-mail para o Cliente via SDK do EmailJS
+        document.getElementById('btnSalvarStatus').addEventListener('click', async function() {
+            if (!chamadoAtualId) return;
+
+            const novoStatus = document.getElementById('selectStatus').value;
+            const novoTecnico = document.getElementById('selectTecnico').value;
+            const novaResposta = document.getElementById('respostaChamado').value;
+
+            const { error } = await supabaseClient
+                .from('tickets')
+                .update({ 
+                    Status: novoStatus,
+                    tecnico: novoTecnico,
+                    resposta: novaResposta 
+                })
+                .eq('id', chamadoAtualId);
+
+            if (error) {
+                alert('Erro ao salvar alteração.');
+                return;
+            }
+
+            try {
+                const mensagemCliente = 
+`Olá, ${chamadoAtualNome || 'Cliente'}! 
+
+Houve uma atualização no seu chamado do ACG Help Desk.
+
+Status Atual: ${novoStatus}
+Técnico Responsável: ${novoTecnico || 'Não atribuído'}
+
+Notas / Resposta da Equipe:
+${novaResposta || 'Nenhuma nota adicional no momento.'}`;
+
+                const templateParams = {
+                    name: chamadoAtualNome || 'Cliente',
+                    email: chamadoAtualEmail,
+                    message: mensagemCliente
+                };
+
+                await emailjs.send('service_oc0naar', 'template_52j99er', templateParams);
+            } catch (emailErr) {
+                console.warn('Aviso ao enviar e-mail para o cliente:', emailErr);
+            }
+
+            alert('Chamado atualizado e cliente notificado por e-mail!');
+            fecharModal();
+            carregarChamados();
+        });
+    </script>
+</body>
+</html>
