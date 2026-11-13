@@ -16,7 +16,6 @@
         <!-- CABEÇALHO / LOGO E MENU DE ABAS -->
         <div class="bg-slate-800 border border-slate-700 rounded-2xl shadow-xl p-5 flex flex-col md:flex-row justify-between items-center gap-4">
             
-            <!-- LOGO ACG HELP DESK ESTILIZADA -->
             <div class="flex items-center gap-3.5">
                 <div class="bg-gradient-to-tr from-rose-600 to-pink-500 p-2.5 rounded-xl shadow-lg shadow-rose-600/30 flex items-center justify-center">
                     <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -95,7 +94,7 @@
             <div id="statusMensagem" class="mt-4 text-center text-sm hidden font-medium"></div>
         </div>
 
-        <!-- ABA 2: PAINEL ADMINISTRATIVO (PROTEGIDO) -->
+        <!-- ABA 2: PAINEL ADMINISTRATIVO -->
         <div id="abaAdmin" class="bg-slate-800 border border-slate-700 rounded-2xl shadow-xl p-8 hidden space-y-6">
             <div class="flex justify-between items-center border-b border-slate-700 pb-4">
                 <div>
@@ -130,7 +129,7 @@
 
     </div>
 
-    <!-- MODAL DE DETALHES E RESPOSTA (ADMIN) -->
+    <!-- MODAL DE DETALHES -->
     <div id="modalDetalhes" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl relative max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b border-slate-700 pb-3">
@@ -138,9 +137,7 @@
                 <button onclick="fecharModal()" class="text-slate-400 hover:text-white font-bold text-xl">&times;</button>
             </div>
 
-            <div id="conteudoDetalhes" class="space-y-3 text-sm text-slate-300">
-                <!-- Preenchido via JS -->
-            </div>
+            <div id="conteudoDetalhes" class="space-y-3 text-sm text-slate-300"></div>
 
             <div class="border-t border-slate-700 pt-4 space-y-3">
                 <div class="grid grid-cols-2 gap-3">
@@ -170,13 +167,13 @@
                 </div>
 
                 <button id="btnSalvarStatus" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2.5 rounded-xl transition duration-200 text-sm cursor-pointer shadow-lg shadow-emerald-600/20">
-                    Salvar Resposta e Notificar Cliente
+                    Salvar Alterações
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- LÓGICA JAVASCRIPT -->
+    <!-- SCRIPT -->
     <script type="module">
         import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 
@@ -184,11 +181,7 @@
         const SUPABASE_ANON_KEY = 'sb_publishable_E2ZVIUguxOImOVo8BZ2-JA_g66ALCIN';
         const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        const RESEND_API_KEY = 're_8pwtRUeD_3y3z6UqXjL9hV1p5KxW8b7N'; 
-
         let chamadoAtualId = null;
-        let chamadoAtualEmail = null;
-        let chamadoAtualNome = null;
         let senhaAdminAutenticada = false;
 
         window.tentarEntrarAdmin = function() {
@@ -225,6 +218,7 @@
             }
         };
 
+        // Envio do Chamado (Salva perfeitamente no Supabase sem erro de CORS)
         document.getElementById('helpdeskForm').addEventListener('submit', async function(event) {
             event.preventDefault();
 
@@ -256,20 +250,13 @@
                     }
                 }
 
-                const nomeVal = document.getElementById('Nome').value;
-                const emailVal = document.getElementById('Email').value;
-                const telVal = document.getElementById('Telefone').value;
-                const deptVal = document.getElementById('Departamento').value;
-                const assuntoVal = document.getElementById('Assunto').value;
-                const descVal = document.getElementById('Descrição').value;
-
                 const dadosChamado = {
-                    Nome: nomeVal,
-                    Email: emailVal,
-                    Telefone: telVal,
-                    departamento: deptVal,
-                    Assunto: assuntoVal,
-                    Descrição: descVal,
+                    Nome: document.getElementById('Nome').value,
+                    Email: document.getElementById('Email').value,
+                    Telefone: document.getElementById('Telefone').value,
+                    departamento: document.getElementById('Departamento').value,
+                    Assunto: document.getElementById('Assunto').value,
+                    Descrição: document.getElementById('Descrição').value,
                     Status: 'Aberto',
                     anexo: anexoUrl
                 };
@@ -280,38 +267,7 @@
 
                 if (dbError) throw dbError;
 
-                try {
-                    const htmlConteudo = `
-                        <h2>Olá, ${nomeVal}!</h2>
-                        <p>Seu chamado foi registrado com sucesso na Central de Suporte ACG.</p>
-                        <ul>
-                            <li><b>Departamento:</b> ${deptVal}</li>
-                            <li><b>Assunto:</b> ${assuntoVal}</li>
-                            <li><b>Descrição:</b> ${descVal}</li>
-                            <li><b>Telefone:</b> ${telVal || 'Não informado'}</li>
-                            <li><b>Anexo:</b> ${anexoUrl ? `<a href="${anexoUrl}" target="_blank">Ver Arquivo</a>` : 'Nenhum anexo'}</li>
-                        </ul>
-                        <p>Nossa equipe técnica já foi notificada e em breve entrará em contato.</p>
-                    `;
-
-                    await fetch('https://api.resend.com/emails', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${RESEND_API_KEY}`
-                        },
-                        body: JSON.stringify({
-                            from: 'ACG Help Desk <onboarding@resend.dev>',
-                            to: [emailVal],
-                            subject: `[Help Desk] Novo Chamado: ${assuntoVal}`,
-                            html: htmlConteudo
-                        })
-                    });
-                } catch (emailErr) {
-                    console.warn('Aviso no envio do e-mail via Resend:', emailErr);
-                }
-
-                statusDiv.textContent = 'Chamado enviado com sucesso e e-mail disparado!';
+                statusDiv.textContent = 'Chamado registrado com sucesso em nossa central!';
                 statusDiv.className = 'mt-4 text-center text-sm text-emerald-400 font-medium';
                 statusDiv.classList.remove('hidden');
                 
@@ -327,6 +283,7 @@
             }
         });
 
+        // Carregar Chamados na Área Admin
         async function carregarChamados() {
             const tbody = document.getElementById('tabelaChamados');
             tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-500">Buscando chamados...</td></tr>`;
@@ -396,9 +353,6 @@
             }
 
             chamadoAtualId = tickets.id;
-            chamadoAtualEmail = tickets.Email;
-            chamadoAtualNome = tickets.Nome;
-
             document.getElementById('selectStatus').value = tickets.Status || 'Aberto';
             document.getElementById('selectTecnico').value = tickets.tecnico || '';
             document.getElementById('respostaChamado').value = tickets.resposta || '';
@@ -426,16 +380,12 @@
         document.getElementById('btnSalvarStatus').addEventListener('click', async function() {
             if (!chamadoAtualId) return;
 
-            const novoStatus = document.getElementById('selectStatus').value;
-            const novoTecnico = document.getElementById('selectTecnico').value;
-            const novaResposta = document.getElementById('respostaChamado').value;
-
             const { error } = await supabaseClient
                 .from('tickets')
                 .update({ 
-                    Status: novoStatus,
-                    tecnico: novoTecnico,
-                    resposta: novaResposta 
+                    Status: document.getElementById('selectStatus').value,
+                    tecnico: document.getElementById('selectTecnico').value,
+                    resposta: document.getElementById('respostaChamado').value 
                 })
                 .eq('id', chamadoAtualId);
 
@@ -444,36 +394,7 @@
                 return;
             }
 
-            try {
-                const htmlResposta = `
-                    <h2>Atualização no seu Chamado - ACG Help Desk</h2>
-                    <p>Olá, ${chamadoAtualNome || 'Cliente'}!</p>
-                    <p>Seu chamado foi atualizado pela equipe:</p>
-                    <ul>
-                        <li><b>Status Atual:</b> ${novoStatus}</li>
-                        <li><b>Técnico Responsável:</b> ${novoTecnico || 'Não atribuído'}</li>
-                        <li><b>Notas da Equipe:</b> ${novaResposta || 'Nenhuma nota adicional'}</li>
-                    </ul>
-                `;
-
-                await fetch('https://api.resend.com/emails', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${RESEND_API_KEY}`
-                    },
-                    body: JSON.stringify({
-                        from: 'ACG Help Desk <onboarding@resend.dev>',
-                        to: [chamadoAtualEmail],
-                        subject: `[Help Desk] Chamado Atualizado (${novoStatus})`,
-                        html: htmlResposta
-                    })
-                });
-            } catch (emailErr) {
-                console.warn('Aviso ao enviar e-mail de atualização:', emailErr);
-            }
-
-            alert('Chamado atualizado e cliente notificado via Resend!');
+            alert('Chamado atualizado com sucesso no painel!');
             fecharModal();
             carregarChamados();
         });
